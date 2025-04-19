@@ -1,184 +1,132 @@
 import React, { useState } from "react";
+import PlaceAutocomplete from "../components/PlaceAutocomplete";
+import Map from "../components/Map";
 
-function CreateTrip() {
-  const [formData, setFormData] = useState({
-    destination: "",
-    tripDuration: "",
-    budget: "",
-    travelCompanion: "",
-  });
+const CreateTrip = () => {
+  const [selectedLocation, setSelectedLocation] = useState(null);
+  const [tripName, setTripName] = useState("");
+  const [startDate, setStartDate] = useState("");
+  const [endDate, setEndDate] = useState("");
 
-  const [response, setResponse] = useState(null);
-  const [loading, setLoading] = useState(false);
-
-  const handleInputChange = (event) => {
-    const { name, value } = event.target;
-    setFormData((prev) => ({
-      ...prev,
-      [name]: value,
-    }));
+  const handleLocationSelect = (location) => {
+    setSelectedLocation(location);
+    console.log("Selected location:", location);
   };
 
-  const handleButtonChange = (field, value) => {
-    setFormData((prev) => ({
-      ...prev,
-      [field]: value,
-    }));
-  };
+  const handleSubmit = (e) => {
+    e.preventDefault();
 
-  const handleSubmit = async (event) => {
-    event.preventDefault();
-    console.log("Form Data:", formData); // Debugging: Check form data
-    setLoading(true);
-    setResponse(null);
+    // Here you would typically save the trip data to your backend
+    console.log("Creating trip:", {
+      name: tripName,
+      location: selectedLocation,
+      startDate,
+      endDate,
+    });
 
-    const { destination, tripDuration, budget, travelCompanion } = formData;
-
-    // Build the prompt string to send to Claude
-    const prompt = `Plan a ${tripDuration}-day trip to ${destination} with a ${budget} budget. I will be traveling with ${travelCompanion}. Include activities, tips, and ideal itinerary.`;
-    console.log("Prompt:", prompt); // Debugging: Check prompt
-
-    try {
-      const result = await fetch("http://localhost:5000/proxy", {
-        method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-        },
-        body: JSON.stringify({ prompt }),
-      });
-
-      const data = await result.json();
-      setResponse(
-        data?.content ||
-          data?.choices?.[0]?.message?.content ||
-          JSON.stringify(data)
-      );
-    } catch (error) {
-      console.error("Error:", error);
-      setResponse("Failed to generate trip. Please try again.");
-    } finally {
-      setLoading(false);
-    }
+    // Reset form or redirect
+    alert("Trip created successfully!");
   };
 
   return (
-    <div className="sm:px-10 md:px-32 lg:px-56 xl:px-10 px-5 mt-10">
-      <h2 className="font-bold text-3xl mb-4">
-        Tell us your travel preferences 🏕️🌴
-      </h2>
-      <p className="text-gray-500 text-xl mb-8">
-        Just provide some basic information, and our trip planner will generate
-        a customized itinerary based on your preferences.
-      </p>
+    <div className="max-w-4xl mx-auto p-4">
+      <h1 className="text-2xl font-bold mb-6">Create a New Trip</h1>
 
-      <form onSubmit={handleSubmit}>
-        {/* Destination */}
-        <div className="mb-6">
-          <label className="block text-lg font-medium mb-2">
-            What is the destination of choice?
+      <form onSubmit={handleSubmit} className="space-y-6">
+        <div>
+          <label className="block text-sm font-medium text-gray-700 mb-1">
+            Trip Name
           </label>
           <input
             type="text"
-            name="destination"
-            value={formData.destination}
-            onChange={handleInputChange}
-            className="border p-2 rounded w-full"
-            placeholder="Enter your destination"
+            value={tripName}
+            onChange={(e) => setTripName(e.target.value)}
+            className="border border-gray-300 rounded-md p-2 w-full"
+            required
           />
         </div>
 
-        {/* Trip Duration */}
-        <div className="mb-6">
-          <label className="block text-lg font-medium mb-2">
-            How many days are you planning the trip?
+        <div>
+          <label className="block text-sm font-medium text-gray-700 mb-1">
+            Destination
           </label>
-          <input
-            type="number"
-            name="tripDuration"
-            value={formData.tripDuration}
-            onChange={handleInputChange}
-            className="border p-2 rounded w-full"
-            placeholder="Enter trip duration in days"
-          />
+          <PlaceAutocomplete onSelectLocation={handleLocationSelect} />
         </div>
 
-        {/* Budget */}
-        <div className="mb-6">
-          <label className="block text-lg font-medium mb-2">
-            What is your estimated budget?
-          </label>
-          <div className="flex space-x-4">
-            {["Low", "Medium", "High"].map((level) => (
-              <button
-                key={level}
-                type="button"
-                className={`p-4 border rounded ${
-                  formData.budget === level
-                    ? "bg-blue-500 text-white"
-                    : "bg-gray-200"
-                }`}
-                onClick={() => handleButtonChange("budget", level)}
-              >
-                {level === "Low"
-                  ? "💵 Low"
-                  : level === "Medium"
-                  ? "💰 Medium"
-                  : "🤑 High"}
-              </button>
-            ))}
+        {selectedLocation && (
+          <div className="border-t border-b py-4 my-4">
+            <h2 className="text-lg font-semibold mb-2">Selected Location</h2>
+            <p>
+              <strong>Name:</strong> {selectedLocation.name}
+            </p>
+            <p>
+              <strong>Address:</strong> {selectedLocation.formatted}
+            </p>
+            {selectedLocation.city && (
+              <p>
+                <strong>City:</strong> {selectedLocation.city}
+              </p>
+            )}
+            {selectedLocation.state && (
+              <p>
+                <strong>State/Region:</strong> {selectedLocation.state}
+              </p>
+            )}
+            {selectedLocation.country && (
+              <p>
+                <strong>Country:</strong> {selectedLocation.country}
+              </p>
+            )}
+          </div>
+        )}
+
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+          <div>
+            <label className="block text-sm font-medium text-gray-700 mb-1">
+              Start Date
+            </label>
+            <input
+              type="date"
+              value={startDate}
+              onChange={(e) => setStartDate(e.target.value)}
+              className="border border-gray-300 rounded-md p-2 w-full"
+              required
+            />
+          </div>
+          <div>
+            <label className="block text-sm font-medium text-gray-700 mb-1">
+              End Date
+            </label>
+            <input
+              type="date"
+              value={endDate}
+              onChange={(e) => setEndDate(e.target.value)}
+              min={startDate}
+              className="border border-gray-300 rounded-md p-2 w-full"
+              required
+            />
           </div>
         </div>
 
-        {/* Travel Companion */}
-        <div className="mb-6">
-          <label className="block text-lg font-medium mb-2">
-            Who do you plan on travelling with on your next adventure?
-          </label>
-          <div className="flex space-x-4">
-            {["Solo", "Couple", "Family", "Friends"].map((companion) => (
-              <button
-                key={companion}
-                type="button"
-                className={`p-4 border rounded ${
-                  formData.travelCompanion === companion
-                    ? "bg-blue-500 text-white"
-                    : "bg-gray-200"
-                }`}
-                onClick={() => handleButtonChange("travelCompanion", companion)}
-              >
-                {companion === "Solo"
-                  ? "🧍 Solo"
-                  : companion === "Couple"
-                  ? "👫 Couple"
-                  : companion === "Family"
-                  ? "👨‍👩‍👧 Family"
-                  : "👫 Friends"}
-              </button>
-            ))}
+        {selectedLocation && (
+          <div className="mt-4">
+            <h2 className="text-lg font-semibold mb-2">Location Map</h2>
+            <Map location={selectedLocation} />
           </div>
-        </div>
+        )}
 
-        {/* Submit Button */}
-        <button
-          type="submit"
-          className={`mt-4 p-2 bg-blue-500 text-white rounded ${
-            loading ? "cursor-not-allowed" : ""
-          }`}
-          disabled={loading}
-        >
-          {loading ? "Generating..." : "Generate Trip"}
-        </button>
+        <div className="pt-4">
+          <button
+            type="submit"
+            className="bg-blue-600 text-white px-4 py-2 rounded-md hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-blue-500"
+            disabled={!selectedLocation}
+          >
+            Create Trip
+          </button>
+        </div>
       </form>
-
-      {/* Response Output */}
-      {response && (
-        <div className="mt-10 bg-gray-100 p-4 rounded whitespace-pre-wrap">
-          <h3 className="font-bold text-xl mb-2">Trip Plan:</h3>
-          <p>{response}</p>
-        </div>
-      )}
     </div>
   );
-}
+};
 
 export default CreateTrip;
